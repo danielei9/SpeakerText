@@ -25,6 +25,10 @@
 // TX INTERVAL LORA
 #define TX_interval 35000
 /*
+YERAY:______
+LORA TRABAJA CON DIRECCIONES COMO SI FUESE LA MAC Y HACE ENVIOS EN LOS CUALES IDENTIFICA MEDIANTE LA EUI QUE ES LA DIRECCION 
+DE MOMENTO A ESTO NI CASO SOLO PARA QUE LO SEPAS 
+
 #define APPEUI_DEF {0xDB, 0x16, 0x01, 0xD0, 0x7E, 0xD5, 0xB3, 0x70}
 //#define DEVEUI_DEF {0x05, 0x70, 0xF0, 0xBF, 0x71, 0x3C, 0x1F, 0x15}
 //#define DEVEUI_DEF {0x00, 0x1F, 0x3C, 0x71, 0xCD, 0xE0, 0x10, 0x00}
@@ -68,7 +72,7 @@ void os_getDevEui(u1_t *buf) { memcpy_P(buf, DEVEUI, 8); }
 static u1_t APPKEY[16] = APPKEY_DEF;
 void os_getDevKey(u1_t *buf) { memcpy(buf, APPKEY, 16); }
 
-static osjob_t sendjob;
+static osjob_t sendjob; // trabajo a realizar para OS FREERTOS 
 
 bool lora_joined = false;
 bool sent = false;
@@ -87,7 +91,7 @@ unsigned int countMessage = 0;
 unsigned long lastmillis = 0;
 unsigned int msgInQueue = 1;
 
-// Pin mapping
+// Pin mapping CONFIGURACION DE LOS PINES QUE USA LORA YA ESTA HECHO 
 const lmic_pinmap lmic_pins = {
     .nss = 18,
     .rxtx = LMIC_UNUSED_PIN,
@@ -96,7 +100,7 @@ const lmic_pinmap lmic_pins = {
     //.rxtx_rx_active = 0,
 };
 
-void onEvent (ev_t ev) {
+void onEvent (ev_t ev) { // EN CASO DE QUE OCURRA UN EVENTO QUE LLAME AL SISTEMA OPERATIVO CLASIFICA EN DIFERENTES EVENTOS Y REACCIONA DEPENDIENDO QUE SEA 
     Serial.print(os_getTime());
     Serial.print(": ");
     switch(ev) {
@@ -165,7 +169,7 @@ void onEvent (ev_t ev) {
             break;
     }
 }
-void do_send(osjob_t* j){
+void do_send(osjob_t* j){ // FUNCIÓN DE ENVIO  *** IMPORTANTE ENVIA EN BYTES ****  HAY UN ARRAY DE BYTES uint_8t que se llama mydata es el dato que envia Maximo 54 bytes Creo recordar
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND) {
         Serial.println(F("OP_TXRXPEND, not sending"));
@@ -180,21 +184,7 @@ void do_send(osjob_t* j){
     // Next TX is scheduled after TX_COMPLETE event.
 }
 
-String getValue(String data, char separator, int index)
-{
-    int found = 0;
-    int strIndex[] = { 0, -1 };
-    int maxIndex = data.length() - 1;
 
-    for (int i = 0; i <= maxIndex && found <= index; i++) {
-        if (data.charAt(i) == separator || i == maxIndex) {
-            found++;
-            strIndex[0] = strIndex[1] + 1;
-            strIndex[1] = (i == maxIndex) ? i+1 : i;
-        }
-    }
-    return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
 void reset_data(){
 
     for(int i = 0 ; i< sizeof(mydata); i++){
@@ -204,7 +194,7 @@ void reset_data(){
     generalData = "";
     countMessage = 0;
 }
-
+// ESTAS FUNCIONES SON CON LAS QUE TIENES QUE TRABAJAR DESPIERTAN AL OS CUANDO LLEGA UN MENSAJE DESDE EL GATEWAY SI NO SABES QUE ES BUSCA EN INTERNET "LORA OTAA ESTRUCTURA"
 void rx(osjobcb_t func) {
   LMIC.osjob.func = func;
   LMIC.rxtime = os_getTime(); // RX _now_
@@ -224,7 +214,7 @@ static void rx_func (osjob_t* job) {
   }
   Serial.println("]");
 
-  // Restart RX
+  // Restart RX LLAMAMOS A LA FUNCION PARA CUANDO LLEGUE UN MENSAJE NOS PASE LOS DATOS 
   rx(rx_func);
 }
 
@@ -250,9 +240,10 @@ void setup() {
     os_setCallback(&txjob, rx_func);
 }
 
-void loop() {
+void loop() { 
+ // TODO: cuando llega un mensaje RX tiene que esperar unos segundos por si llega otro, si llega otro juntar los mensajes así hasta que no lleguen pasados x segundos cuando hayan pasado esos x segundos que junte todo en un string y que lo pase por el serial2 Hay que inicializar el serial 2 y darle el mensaje recibido la placa a usar es el TTGO v2 (buscalo te será necesario para saber donde estan el RX_2 y el TX_2 para configurarlo) simplemente un serial.begin y bla bla  -> si te lias mucho dimelo y
+ //si no te atreves y quieres hacerlo mas pussy que conforme lleguen los mensajes los envie por serial y ya me encargo yo del resto en python Suertee
     os_runloop_once();
-
     do_send(&sendjob);
         
 }
